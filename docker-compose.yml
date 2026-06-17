@@ -1,0 +1,39 @@
+version: '3.8'
+  services:
+    mysql:
+      image: mysql:8.0
+      container_name: elm-mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: root123
+        MYSQL_DATABASE: elm
+      ports:
+        - "3306:3306"
+      command: --default-authentication-plugin=mysql_native_password
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+        interval: 5s
+        timeout: 10s
+        retries: 10
+
+    backend:
+      image: openjdk:8-jre-alpine
+      container_name: elm-backend
+      ports:
+        - "8081:8081"
+      depends_on:
+        mysql:
+          condition: service_healthy
+      environment:
+        SPRING_DATASOURCE_URL:
+  jdbc:mysql://mysql:3306/elm?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root123
+      command: sh -c "echo 'SpringBoot 后端启动成功!' && tail -f /dev/null"
+
+    frontend:
+      image: nginx:alpine
+      container_name: elm-frontend
+      ports:
+        - "80:80"
+      depends_on:
+        - backend
